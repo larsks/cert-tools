@@ -17,7 +17,7 @@ show_all_certs() {
 	workdir=$(mktemp -d certXXXXXX)
 	trap 'rm -rf $workdir' EXIT
 
-	csplit -q -z "$1" -f "$workdir/cert-" '/^-----BEGIN CERTIFICATE-----/' '{*}'
+	csplit -q -z "${1:--}" -f "$workdir/cert-" '/^-----BEGIN CERTIFICATE-----/' '{*}'
 	for cert in "$workdir"/*; do
 		show_cert "$cert"
 		echo
@@ -36,7 +36,7 @@ done
 shift $(( OPTIND - 1 ))
 
 if (( opt_all )); then
-	show_all_certs "$1"
+	show_all_certs "$@"
 else
-	show_cert "$1"
+	show_cert "$@"
 fi
