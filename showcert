@@ -1,6 +1,6 @@
 #!/bin/bash
 
-opt_short=0
+opt_short=1
 opt_all=0
 
 show_cert() {
@@ -26,9 +26,10 @@ show_all_certs() {
 
 set -eu
 
-while getopts sa ch; do
+while getopts sva ch; do
 	case $ch in
 		s)	opt_short=1;;
+		v)	opt_short=0;;
 		a)	opt_all=1;;
 		*)	exit 2;;
 	esac
