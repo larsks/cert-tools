@@ -1,0 +1,42 @@
+#!/bin/bash
+
+opt_short=0
+opt_all=0
+
+show_cert() {
+	if (( opt_short )); then
+		x509_args=(-fingerprint -sha256 -issuer -subject -dates)
+	else
+		x509_args=(-text)
+	fi
+
+	openssl x509 ${1:+-in "$1"} -noout "${x509_args[@]}"
+}
+
+show_all_certs() {
+	workdir=$(mktemp -d certXXXXXX)
+	trap 'rm -rf $workdir' EXIT
+
+	csplit -q -z "$1" -f "$workdir/cert-" '/^-----BEGIN CERTIFICATE-----/' '{*}'
+	for cert in "$workdir"/*; do
+		show_cert "$cert"
+		echo
+	done
+}
+
+set -eu
+
+while getopts sa ch; do
+	case $ch in
+		s)	opt_short=1;;
+		a)	opt_all=1;;
+		*)	exit 2;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
+if (( opt_all )); then
+	show_all_certs "$1"
+else
+	show_cert "$1"
+fi

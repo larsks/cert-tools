@@ -1,0 +1,48 @@
+#!/bin/bash
+
+cert_sans=()
+
+function join_by {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
+while getopts k:d: ch; do
+	case $ch in
+		k)	key_file=$OPTARG;;
+		d)	cert_sans+=("DNS:$OPTARG");;
+		*)	exit 2;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
+cert_file=$1
+if [[ -z $cert_file ]]; then
+	echo "ERROR: missing certificate filename" >&2
+	exit 1
+fi
+shift
+
+cert_cn=$1
+if [[ -z $cert_cn ]]; then
+	echo "ERROR: missing certificate common name" >&2
+	exit 1
+fi
+shift
+
+if ! (( ${#cert_sans[@]} )); then
+	cert_sans+=("DNS:$cert_cn")
+fi
+
+if [[ -z $key_file ]]; then
+	key_file=${cert_file%.*}.key
+	openssl genpkey -out "$key_file" -quiet -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+fi
+
+openssl req -x509 -new -nodes -key "$key_file" \
+	-days 3650 -sha256 \
+	-subj "/CN=$cert_cn" \
+	-out "$cert_file" \
+	-addext "subjectAltName=$(join_by , "${cert_sans[@]}")"

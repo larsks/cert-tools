@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Split a certificate bundle into individual certificates.
+#
+# This will produce files named `cert-000.crt`, `cert-001.crt`, .etc.
+
+read -r count < <(csplit -z "$1" -f cert- -b '%03d.crt' '/^-----BEGIN CERTIFICATE-----/' '{*}' | wc -l)
+echo "split $count certificates"
