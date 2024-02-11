@@ -29,10 +29,6 @@ host=${BASH_REMATCH[2]}
 port=${BASH_REMATCH[4]}
 
 case $schema in
-	http)
-		port=${port:-80}
-		;;
-
 	https)
 		port=${port:-443}
 		;;
