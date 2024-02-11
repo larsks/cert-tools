@@ -1,0 +1,45 @@
+#!/bin/bash
+
+url_regex='([^:]+)://([^:]+)(:([0-9]+))?(/|$)'
+
+while getopts s: ch; do
+	case $ch in
+		s)	s_client_args+=(-servername "$OPTARG")
+			;;
+
+		*)	exit 2
+			;;
+	esac
+done
+shift $(( OPTIND - 1 ))
+
+url=$1
+if [[ -z $url ]]; then
+	echo "ERROR: missing url" >&2
+	exit 1
+fi
+
+if ! [[ $url =~ $url_regex ]]; then
+	echo "ERROR: invalid url" >&2
+	exit 1
+fi
+
+schema=${BASH_REMATCH[1]}
+host=${BASH_REMATCH[2]}
+port=${BASH_REMATCH[4]}
+
+case $schema in
+	http)
+		port=${port:-80}
+		;;
+
+	https)
+		port=${port:-443}
+		;;
+
+	*)	echo "ERROR: unsupported schema" >&2
+		exit 1
+		;;
+esac
+
+openssl s_client -connect "${host}:${port}" -showcerts "${s_client_args[@]}" < /dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/ p'
