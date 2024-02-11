@@ -5,7 +5,7 @@ opt_all=0
 
 show_cert() {
 	if (( opt_short )); then
-		x509_args=(-fingerprint -sha256 -issuer -subject -dates -ext subjectAltName)
+		x509_args=(-fingerprint -sha256 -subject -issuer -dates -ext subjectAltName)
 	else
 		x509_args=(-text)
 	fi
