@@ -53,3 +53,10 @@ Retrieve certificate from a website.
 urlcert https://google.com | showcert
 ```
 
+## splitcert
+
+Split a certificate bundle into individual certificate files.
+
+```
+splitcert cabundle.crt
+```
