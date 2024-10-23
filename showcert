@@ -4,40 +4,46 @@ opt_short=1
 opt_all=0
 
 show_cert() {
-	if (( opt_short )); then
-		x509_args=(-fingerprint -sha256 -subject -issuer -dates -ext subjectAltName)
-	else
-		x509_args=(-text)
-	fi
+  if ((opt_short)); then
+    x509_args=(-fingerprint -sha256 -subject -issuer -dates -ext subjectAltName)
+  else
+    x509_args=(-text)
+  fi
 
-	openssl x509 ${1:+-in "$1"} -noout "${x509_args[@]}"
+  openssl x509 ${1:+-in "$1"} -noout "${x509_args[@]}"
 }
 
 show_all_certs() {
-	workdir=$(mktemp -d certXXXXXX)
-	trap 'rm -rf $workdir' EXIT
+  workdir=$(mktemp -d certXXXXXX)
+  trap 'rm -rf $workdir' EXIT
 
-	csplit -q -z "${1:--}" -f "$workdir/cert-" '/^-----BEGIN CERTIFICATE-----/' '{*}'
-	for cert in "$workdir"/*; do
-		show_cert "$cert"
-		echo
-	done
+  csplit -q -z "${1:--}" -f "$workdir/cert-" '/^-----BEGIN CERTIFICATE-----/' '{*}'
+  for cert in "$workdir"/*; do
+    show_cert "$cert" || :
+    echo
+  done
 }
 
 set -eu
 
 while getopts sva ch; do
-	case $ch in
-		s)	opt_short=1;;
-		v)	opt_short=0;;
-		a)	opt_all=1;;
-		*)	exit 2;;
-	esac
+  case $ch in
+  s) opt_short=1 ;;
+  v) opt_short=0 ;;
+  a) opt_all=1 ;;
+  *) exit 2 ;;
+  esac
 done
-shift $(( OPTIND - 1 ))
+shift $((OPTIND - 1))
 
-if (( opt_all )); then
-	show_all_certs "$@"
+if ((opt_all)); then
+  show_all_certs "$@"
 else
-	show_cert "$@"
+  if [ "$@" ]; then
+    for cert in "$@"; do
+      show_cert "$cert" || :
+    done
+  else
+    show_cert
+  fi
 fi
