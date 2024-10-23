@@ -3,25 +3,36 @@
 url_regex='([^:]+)://([^:]+)(:([0-9]+))?(/|$)'
 
 while getopts s: ch; do
-	case $ch in
-		s)	s_client_args+=(-servername "$OPTARG")
-			;;
+  case $ch in
+  s)
+    s_client_args+=(-servername "$OPTARG")
+    ;;
 
-		*)	exit 2
-			;;
-	esac
+  *)
+    exit 2
+    ;;
+  esac
 done
-shift $(( OPTIND - 1 ))
+shift $((OPTIND - 1))
 
 url=$1
 if [[ -z $url ]]; then
-	echo "ERROR: missing url" >&2
-	exit 1
+  echo "ERROR: missing url" >&2
+  exit 1
+fi
+
+if [[ $url =~ ^http:// ]]; then
+  echo "ERROR: http urls are not supported" >&2
+  exit 1
+fi
+
+if ! [[ $url =~ :// ]]; then
+  url="https://$url"
 fi
 
 if ! [[ $url =~ $url_regex ]]; then
-	echo "ERROR: invalid url" >&2
-	exit 1
+  echo "ERROR: invalid url" >&2
+  exit 1
 fi
 
 schema=${BASH_REMATCH[1]}
@@ -29,13 +40,14 @@ host=${BASH_REMATCH[2]}
 port=${BASH_REMATCH[4]}
 
 case $schema in
-	https)
-		port=${port:-443}
-		;;
+https)
+  port=${port:-443}
+  ;;
 
-	*)	echo "ERROR: unsupported schema" >&2
-		exit 1
-		;;
+*)
+  echo "ERROR: unsupported schema" >&2
+  exit 1
+  ;;
 esac
 
-openssl s_client -connect "${host}:${port}" -showcerts "${s_client_args[@]}" < /dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/ p'
+openssl s_client -connect "${host}:${port}" -showcerts "${s_client_args[@]}" </dev/null 2>/dev/null | sed -n '/BEGIN CERTIFICATE/,/END CERTIFICATE/ p'
